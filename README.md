@@ -1,7 +1,93 @@
-MS43_RPi_Dashboard_CarPlay_Integrated is a fully-featured automotive dashboard simulation and telemetry interface designed for BMW MS43 engine platforms. Built for Raspberry Pi, this project integrates realistic car sensor simulations, MS43 ECU data integration, and CarPlay-style visualization, delivering a professional, modern dashboard experience for track and drift applications.
+MS43_RPi_Dashboard_CarPlay_Integrated NeoDash – BMW MS43 / RPi Integrated Dashboard + CarPlay
 
-The dashboard includes realistic waveforms, active boost control, gear simulation, anti-lag, and logging features, along with a highly customizable, M-theme inspired user interface. It supports track mode, drift mode, high/low boost toggles, and live telemetry monitoring of engine parameters like RPM, speed, coolant, oil temp, boost, throttle, AFR, and much more.
+Next-generation performance dashboard for BMWs – integrates MS43 telemetry, CarPlay, drift/track mode simulation, and real-time logging on a Raspberry Pi.
 
+🎯 Features
+
+MS43 Telemetry Integration – Real-time RPM, speed, boost, AFR, and more
+
+CarPlay & RPi Ready – Seamless dashboard integration for infotainment
+
+Track & Drift Modes – Active boost switching, anti-lag, realistic gear changes
+
+Dynamic Visuals – Neon-styled UI, RPM arc, shift lights, drift angle, G-force display
+
+Temperature & Boost Monitoring – Brake temps, tire heat map, coolant & oil temps
+
+Data Logging – Full session recording, CSV export, low/high boost toggles
+
+Simulation Mode – Simulated driving for testing without a car
+
+Responsive IC10-style Dashboard – Clean layout with carbon background & watermark
+
+⚙️ Installation
+
+Requirements:
+
+Raspberry Pi 4+ or compatible device
+
+Node.js ≥ 18 & npm OR Python 3.11+
+
+MS43 OBD-II interface / simulator
+
+CarPlay device for display (optional, simulation supported)
+
+# Clone repo
+git clone https://github.com/yourusername/NeoDash.git
+cd NeoDash
+
+# Install dependencies
+npm install        # For Node.js version
+# OR
+pip install -r requirements.txt   # For Python version
+
+# Run the dashboard
+npm start          # Node.js
+# OR
+python3 dashboard.py
+
+🛠 Usage
+
+Toggle Drive Modes: Comfort / Sport / Sport+
+
+Boost Control: Low Boost / High Boost / Anti-Lag
+
+Track Mode Simulation: Activates drift mode, higher temperatures, faster gear changes
+
+Logging: Click Start Log / End Log to record sessions, download CSV for analysis
+
+Live Telemetry: Connect OBD or simulator for real-time sensor updates
+
+📦 File Structure
+NeoDash/
+├─ src/                 # Core dashboard UI & simulation code
+├─ assets/              # Icons, images, fonts
+├─ logs/                # CSV session logs
+├─ demo/                # Demo screenshots & GIFs
+├─ package.json / requirements.txt
+├─ README.md
+└─ LICENSE
+
+🔧 Contributing
+
+Fork the repo
+
+Create a branch (git checkout -b feature/awesome-feature)
+
+Commit your changes (git commit -am 'Add awesome feature')
+
+Push to the branch (git push origin feature/awesome-feature)
+
+Open a Pull Request
+
+📄 License
+
+MIT License – see LICENSE
+ for details.
+
+🚗 About
+
+NeoDash is designed for car enthusiasts, developers, and professional tuners who want a realistic, track-ready BMW dashboard experience on a Raspberry Pi, with full telemetry, CarPlay integration, and data logging for performance analysis.
 Features
 
 MS43 ECU Simulation & Integration:
