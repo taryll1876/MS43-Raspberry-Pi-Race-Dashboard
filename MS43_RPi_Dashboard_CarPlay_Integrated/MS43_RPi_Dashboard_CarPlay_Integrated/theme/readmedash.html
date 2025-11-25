@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BMW M50B25 OBD Scanner Project</title>
+<style>
+    body {
+        background: #101417;
+        color: #e0e0e0;
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+    }
+    header {
+        padding: 20px;
+        background: #1c1f24;
+        text-align: center;
+        border-bottom: 2px solid #444;
+    }
+    h1, h2, h3 {
+        color: #4ec3ff;
+    }
+    .section {
+        padding: 20px;
+        border-bottom: 1px solid #333;
+    }
+    code, pre {
+        background: #1c1f24;
+        padding: 10px;
+        display: block;
+        border-radius: 6px;
+        overflow-x: auto;
+        color: #9cf5a6;
+    }
+    .highlight {
+        color: #ffa44e;
+        font-weight: bold;
+    }
+    .box {
+        background: #161a1d;
+        padding: 12px;
+        border-left: 4px solid #4ec3ff;
+        margin: 12px 0;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>BMW M50B25 Single-VANOS OBD Scanner Project</h1>
+    <p>Custom OBD1/K-line Scanner – Real-Time Gauges • Simulation Mode • BMW-Specific Features</p>
+</header>
+
+<div class="section">
+<h2>1. Overview</h2>
+<p>
+This page documents a complete open-source OBD scanner for the BMW <span class="highlight">M50B25 single VANOS</span> engine.  
+The scanner uses:
+</p>
+<ul>
+    <li>ESP32-S3 microcontroller</li>
+    <li>L9637D / MC33660 K-Line transceiver</li>
+    <li>3.2&quot; or 3.5&quot; TFT display</li>
+    <li>Custom UI with gauges, bar graphs, BMW VANOS monitor</li>
+    <li>Data simulation mode for demo/testing</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>2. BMW M50B25 ECU Communication</h2>
+<p>The M50 engine uses <b>ISO 9141-2 K-Line</b> (not OBD2 CAN).</p>
+
+<h3>Protocols</h3>
+<table border="1" cellpadding="6">
+<tr><th>Years</th><th>ECU</th><th>Protocol</th></tr>
+<tr><td>1992–1993</td><td>Bosch Motronic M3.1</td><td>BMW ADS / K-Line</td></tr>
+<tr><td>1994–1995</td><td>Bosch Motronic M3.3</td><td>ISO 9141-2</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>3. Hardware Design</h2>
+
+<h3>MCU</h3>
+<div class="box">
+<b>ESP32-S3</b>  
+- Dual core  
+- Fast SPI for display  
+- Plenty of RAM  
+- WiFi + BLE  
+</div>
+
+<h3>K-Line Interface</h3>
+<p>Use the <b>L9637D</b> or <b>MC33660</b> chip.</p>
+
+<pre>
+ESP32 TX → L9637D TX  
+ESP32 RX ← L9637D RX  
+12V car → buck → 5V → 3.3V  
+</pre>
+
+<h3>Buttons</h3>
+<ul>
+    <li>Mode</li>
+    <li>Back</li>
+    <li>Graph</li>
+    <li>Simulate</li>
+    <li>Settings</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>4. UI Layout</h2>
+
+<h3>Main Dashboard</h3>
+<pre>
+[   RPM Gauge    ]     [ Coolant Temp ]
+     6850 rpm             92°C
+
+[  BAR GRAPH (Load) ]    [ Intake Temp ]
+                                32°C
+</pre>
+
+<h3>Modes</h3>
+<ul>
+    <li>Live data stream</li>
+    <li>VANOS monitor</li>
+    <li>Fuel trims</li>
+    <li>Lambda monitor</li>
+    <li>Error codes</li>
+    <li>BMW service reset</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>5. Supported BMW Sensors</h2>
+<ul>
+    <li>RPM</li>
+    <li>Coolant temperature</li>
+    <li>Intake Air Temperature</li>
+    <li>VANOS position + duty cycle</li>
+    <li>O2 sensor voltage</li>
+    <li>Fuel trims</li>
+    <li>Ignition advance</li>
+    <li>Injection duration</li>
+    <li>Battery voltage</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>6. Simulation Mode</h2>
+<p>Press a button → device simulates a running M50 engine.</p>
+
+<h3>Simulated Channels</h3>
+<ul>
+    <li>RPM sweep (idle → 6500)</li>
+    <li>Temperature warm-up (20°C → 95°C)</li>
+    <li>O2 sensor oscillation (0.1–0.9V)</li>
+    <li>Throttle pulse simulation</li>
+    <li>Speed ramp model</li>
+    <li>VANOS activation window (1500–5500 rpm)</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>7. ESP32 Example Code - K-Line Init + RPM</h2>
+<pre>
+#include <HardwareSerial.h>
+
+HardwareSerial Kline(1);
+
+void setup() {
+  Serial.begin(115200);
+
+  // K-line UART
+  Kline.begin(10400, SERIAL_8N1, 16, 17);
+  delay(300);
+
+  // 5-baud init
+  send5BaudInit(0x68);
+}
+
+void send5BaudInit(uint8_t addr) {
+  for (int i = 0; i < 8; i++) {
+    digitalWrite(16, (addr >> i) & 1);
+    delay(200);
+  }
+}
+
+void loop() {
+  requestRPM();
+  delay(200);
+}
+
+void requestRPM() {
+  byte request[] = {0x68, 0x6A, 0xF0, 0x01, 0x0C};
+  Kline.write(request, 5);
+
+  if (Kline.available()) {
+    byte a = Kline.read();
+    byte b = Kline.read();
+    int rpm = ((a * 256) + b) / 4;
+
+    Serial.print("RPM: ");
+    Serial.println(rpm);
+  }
+}
+</pre>
+</div>
+
+<div class="section">
+<h2>8. Extra BMW Features</h2>
+<ul>
+    <li>Reset oil/inspection lights</li>
+    <li>ABS fault reading (E36)</li>
+    <li>OBC hidden features</li>
+    <li>Cluster style MPG bar simulation</li>
+    <li>VANOS timing graph</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>9. Next Steps</h2>
+<p>I can provide:</p>
+<ul>
+    <li>Kicad schematic</li>
+    <li>PCB layout</li>
+    <li>Display UI graphics</li>
+    <li>Full ESP32 firmware</li>
+    <li>3D enclosure</li>
+</ul>
+</div>
+
+</body>
+</html>

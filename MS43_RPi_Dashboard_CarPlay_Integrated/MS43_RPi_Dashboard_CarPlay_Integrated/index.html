@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EuroDash – MS43 Race Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+<style>
+body {
+  background: #000;
+  color: #fff;
+  font-family: "Orbitron", sans-serif;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header */
+h1 {
+  text-align: center;
+  color: #ff3b3b;
+  text-shadow: 0 0 12px #ff0000;
+  font-size: 2.2rem;
+  margin: 10px 0;
+}
+
+/* Metrics grid */
+.metric-box {
+  background: #111;
+  border: 1px solid #ff3b3b55;
+  border-radius: 10px;
+  margin: 8px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 0 12px #000;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #ff3838;
+  text-shadow: 0 0 8px #ff0000;
+}
+
+/* Rev limiter glow */
+.rev-glow {
+  animation: glowPulse 0.15s infinite;
+}
+
+@keyframes glowPulse {
+  0% { background-color: rgba(255,0,0,0.3);}
+  50% { background-color: rgba(255,0,0,0.6);}
+  100% { background-color: rgba(255,0,0,0.3);}
+}
+
+/* Shift light bar */
+#shiftBar {
+  height: 20px;
+  width: 100%;
+  background: linear-gradient(to right, green, yellow, orange, red);
+  opacity: 0.15;
+  transition: opacity 0.2s ease;
+  margin-bottom: 10px;
+}
+
+/* Themes */
+.theme-drift { background: #111; color: #0afffb; }
+.theme-track { background: #090909; color: #ffdd00; }
+.theme-drag { background: #000; color: #ff0044; }
+
+</style>
+</head>
+
+<body>
+
+<h1>EuroDash – MS43 Race Dashboard</h1>
+<p class="text-center" id="timestamp">Loading...</p>
+
+<div id="shiftBar"></div>
+
+<div class="container-fluid">
+
+  <div class="row text-center">
+    <div class="col metric-box">RPM<br><span id="rpm" class="metric-value">0</span></div>
+    <div class="col metric-box">Speed<br><span id="speed" class="metric-value">0 MPH</span></div>
+    <div class="col metric-box">Gear<br><span id="gear" class="metric-value">N</span></div>
+    <div class="col metric-box">Throttle<br><span id="throttle" class="metric-value">0%</span></div>
+  </div>
+
+  <div class="row text-center">
+    <div class="col metric-box">Coolant<br><span id="coolant" class="metric-value">0°C</span></div>
+    <div class="col metric-box">Oil Temp<br><span id="oilTemp" class="metric-value">0°C</span></div>
+    <div class="col metric-box">Oil Pressure<br><span id="oilPressure" class="metric-value">0 PSI</span></div>
+    <div class="col metric-box">Boost/MAP<br><span id="boost" class="metric-value">0 PSI</span></div>
+  </div>
+
+  <div class="row text-center">
+    <div class="col metric-box">IAT<br><span id="iat" class="metric-value">0°C</span></div>
+    <div class="col metric-box">MAF<br><span id="maf" class="metric-value">0 g/s</span></div>
+    <div class="col metric-box">AFR<br><span id="afr" class="metric-value">14.7</span></div>
+    <div class="col metric-box">Engine Load<br><span id="load" class="metric-value">0%</span></div>
+  </div>
+
+  <div class="row text-center">
+    <div class="col metric-box">Ignition Timing<br><span id="timing" class="metric-value">0°</span></div>
+    <div class="col metric-box">Battery Voltage<br><span id="voltage" class="metric-value">0 V</span></div>
+    <div class="col metric-box">Fuel Trim STFT<br><span id="stft" class="metric-value">0%</span></div>
+    <div class="col metric-box">Fuel Trim LTFT<br><span id="ltft" class="metric-value">0%</span></div>
+  </div>
+
+  <div class="row text-center mt-3">
+    <div class="col"><button class="btn btn-primary w-100" onclick="connectOBD()">Connect OBD2</button></div>
+    <div class="col"><button class="btn btn-warning w-100" onclick="toggleLogging()">Start Logging</button></div>
+    <div class="col">
+      <select class="form-select" onchange="changeTheme(this.value)">
+        <option value="drift">Drift Mode</option>
+        <option value="track">Track Mode</option>
+        <option value="drag">Drag Mode</option>
+      </select>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* Clock */
+setInterval(()=>{document.getElementById("timestamp").innerText=new Date().toLocaleTimeString();},1000);
+
+/* Gear detection */
+const gearRatios={1:3.82,2:2.2,3:1.4,4:1,5:0.8};
+const finalDrive=3.15;
+const tireCirc=2.02;
+
+function detectGear(rpm,speed){
+  if(speed<2||rpm<900) return "N";
+  let best="N",bestDiff=Infinity;
+  for(const g in gearRatios){
+    const expected=(rpm/(gearRatios[g]*finalDrive))*tireCirc*0.03728;
+    const diff=Math.abs(expected-speed);
+    if(diff<bestDiff){bestDiff=diff; best=g;}
+  }
+  return best;
+}
+
+/* Shift bar + rev glow */
+const redline=6800;
+function updateShiftLight(rpm){
+  const bar=document.getElementById("shiftBar");
+  bar.style.opacity=Math.min(rpm/redline,1);
+  if(rpm>redline-300) document.body.classList.add("rev-glow");
+  else document.body.classList.remove("rev-glow");
+}
+
+/* Logging */
+let logging=false;
+let csvRows=["RPM,Speed,Coolant,OilTemp,OilPressure,Throttle,Boost,IAT,MAF,AFR,Load,Timing,Voltage,STFT,LTFT,Gear"];
+function toggleLogging(){logging=!logging; if(!logging){
+  const blob=new Blob([csvRows.join("\n")],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`EuroDash_Log_${Date.now()}.csv`;
+  a.click();
+}}
+
+/* Theme */
+function changeTheme(t){document.body.className=""; document.body.classList.add(`theme-${t}`);}
+
+/* Simulated OBD2 */
+function connectOBD(){startSimulatedData();}
+function startSimulatedData(){
+  setInterval(()=>{
+    const rpm=Math.floor(Math.random()*7000);
+    const speed=Math.floor(Math.random()*120);
+    const coolant=85+Math.floor(Math.random()*10);
+    const oilTemp=90+Math.floor(Math.random()*15);
+    const oilPressure=(20+Math.random()*60).toFixed(1);
+    const throttle=Math.floor(Math.random()*100);
+    const boost=(Math.random()*15).toFixed(1);
+    const iat=25+Math.floor(Math.random()*20);
+    const maf=(Math.random()*180).toFixed(1);
+    const afr=(13+Math.random()*2).toFixed(1);
+    const load=Math.floor(Math.random()*95);
+    const timing=Math.floor(Math.random()*30-5);
+    const voltage=(12+Math.random()).toFixed(1);
+    const stft=(Math.random()*10).toFixed(1);
+    const ltft=(Math.random()*10).toFixed(1);
+    const gear=detectGear(rpm,speed);
+
+    document.getElementById("rpm").innerText=rpm;
+    document.getElementById("speed").innerText=speed+" MPH";
+    document.getElementById("coolant").innerText=coolant;
+    document.getElementById("oilTemp").innerText=oilTemp;
+    document.getElementById("oilPressure").innerText=oilPressure;
+    document.getElementById("throttle").innerText=throttle;
+    document.getElementById("boost").innerText=boost;
+    document.getElementById("iat").innerText=iat;
+    document.getElementById("maf").innerText=maf;
+    document.getElementById("afr").innerText=afr;
+    document.getElementById("load").innerText=load;
+    document.getElementById("timing").innerText=timing;
+    document.getElementById("voltage").innerText=voltage;
+    document.getElementById("stft").innerText=stft;
+    document.getElementById("ltft").innerText=ltft;
+    document.getElementById("gear").innerText=gear;
+
+    updateShiftLight(rpm);
+
+    if(logging) csvRows.push([rpm,speed,coolant,oilTemp,oilPressure,throttle,boost,iat,maf,afr,load,timing,voltage,stft,ltft,gear].join(","));
+  },150);
+}
+</script>
+
+</body>
+</html>

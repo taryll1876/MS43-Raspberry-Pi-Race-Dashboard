@@ -1,0 +1,147 @@
+<!-- Neon Dash UI V3 — Full Simulation + Motorsport Modules -->
+<html>
+<head>
+<style>
+body { margin:0; padding:0; background:#000; font-family:"Orbitron", sans-serif; color:#0ff; overflow:hidden; }
+#screenWrapper { width:1280px; height:720px; margin:auto; background:#000; position:relative; overflow:hidden; border:4px solid #0ff; border-radius:18px; box-shadow:0 0 25px #0ff inset; }
+
+/* Carbon background */
+#screenWrapper { background-image:url('https://i.imgur.com/4bZQFhE.png'); background-size:cover; }
+
+/* Layout Grid */
+.dashboard-grid { display:grid; grid-template-columns:1fr 2fr 1fr; grid-gap:15px; padding:20px; height:100%; }
+
+/* Neon boxes */
+.box { background:rgba(0,0,0,0.55); border:2px solid #0ff; border-radius:14px; padding:12px; box-shadow:0 0 12px #0ff inset; color:#0ff; }
+
+/* SVG RPM Arc */
+#rpmArc svg { width:100%; height:200px; }
+.needle { stroke:#f00; stroke-width:6; stroke-linecap:round; transform-origin:150px 150px; transition:transform 0.09s linear; }
+
+/* Drive tiles */
+.drive-tile { padding:8px 16px; margin:6px; display:inline-block; border:2px solid #fff; border-radius:12px; text-align:center; cursor:pointer; opacity:0.6; transition:0.2s; }
+.drive-tile.active { opacity:1; box-shadow:0 0 15px #fff; }
+
+/* G-force Circle */
+#gforceCircle { width:180px; height:180px; border:2px solid #0ff; border-radius:50%; position:relative; }
+#gDot { width:16px; height:16px; background:#f00; border-radius:50%; position:absolute; top:82px; left:82px; box-shadow:0 0 12px #f00; }
+
+/* Tire Temps */
+.tire-grid { display:grid; grid-template-columns:repeat(2,1fr); grid-gap:10px; }
+.tire-box { height:60px; border-radius:10px; }
+
+/* Brake Glow */
+.brake { width:70px; height:70px; border-radius:50%; background:#222; box-shadow:0 0 5px #f00 inset; margin:auto; }
+
+/* Fuel & Temp bars */
+.side-bar { width:40px; height:250px; border:2px solid #0ff; border-radius:20px; position:relative; overflow:hidden; }
+.bar-fill { position:absolute; bottom:0; width:100%; background:#0ff; box-shadow:0 0 15px #0ff; height:50%; transition:height .1s; }
+
+/* Startup animation */
+#startupOverlay { position:absolute; inset:0; background:#000; display:flex; justify-content:center; align-items:center; font-size:48px; color:#0ff; animation:fadeOut 3s forwards; }
+@keyframes fadeOut { 0%{opacity:1;} 100%{opacity:0; visibility:hidden;} }
+
+/* Map / Lap popup */
+#mapPopup { position:absolute; top:20px; right:20px; width:260px; height:260px; background:#000c; border:2px solid #0ff; border-radius:12px; padding:10px; display:none; box-shadow:0 0 20px #0ff; }
+</style>
+</head>
+<body>
+<div id="screenWrapper">
+<div id="startupOverlay">EURO DRIVE</div>
+
+<div class="dashboard-grid">
+
+<!-- LEFT SIDE (Fuel, Temp, Brake Glow) -->
+<div>
+<div class="side-bar"><div id="fuelBar" class="bar-fill"></div></div>
+<br>
+<div class="side-bar"><div id="tempBar" class="bar-fill"></div></div>
+<br>
+<div class="brake" id="brakeGlow"></div>
+</div>
+
+<!-- CENTER (RPM, Drive Tiles, G-force, Boost) -->
+<div>
+<div id="rpmArc" class="box">
+<svg viewBox="0 0 300 180">
+<path d="M20 160 A130 130 0 0 1 280 160" stroke="#044" stroke-width="16" fill="none"/>
+<line id="rpmNeedle" class="needle" x1="150" y1="150" x2="150" y2="40" />
+</svg>
+<div id="rpmText" style="font-size:32px; text-align:center;">0 RPM</div>
+</div>
+
+<div style="text-align:center; margin:10px;">
+<div class="drive-tile" id="modeComfort">Comfort</div>
+<div class="drive-tile" id="modeSport">Sport</div>
+<div class="drive-tile" id="modeSportPlus">Sport+</div>
+</div>
+
+<div id="boostBox" class="box" style="text-align:center; font-size:32px;">Boost: <span id="boostVal">0</span> PSI</div>
+
+<div id="gforceCircle" class="box">
+<div id="gDot"></div>
+</div>
+</div>
+
+<!-- RIGHT SIDE (Tire Temps, Lap Timer, Map Popup) -->
+<div>
+<div class="tire-grid box" id="tireTemps">
+<div id="tireFL" class="tire-box"></div>
+<div id="tireFR" class="tire-box"></div>
+<div id="tireRL" class="tire-box"></div>
+<div id="tireRR" class="tire-box"></div>
+</div>
+
+<div id="lapTimer" class="box" style="font-size:28px; text-align:center;">
+Lap: <span id="lapVal">00:00.00</span>
+</div>
+
+<div id="mapPopup">MAP / GPS SIM</div>
+</div>
+</div>
+</div>
+
+<script>
+function rand(min,max){ return Math.random()*(max-min)+min; }
+
+function updateSim(){
+let rpm = rand(900,7200);
+let boost = rand(-10,28);
+let fuel = rand(20,100);
+let temp = rand(40,100);
+let tire = ()=> rand(60,120);
+let gX = rand(-1.2,1.2);
+let gY = rand(-1.2,1.2);
+
+// RPM
+rpmText.innerText = Math.floor(rpm)+" RPM";
+let angle = -90 + (rpm/7200)*180;
+rpmNeedle.style.transform = `rotate(${angle}deg)`;
+
+// Boost
+boostVal.innerText = boost.toFixed(1);
+
+// Fuel / Temp
+fuelBar.style.height = fuel + "%";
+tempBar.style.height = temp + "%";
+
+// Brake glow
+brakeGlow.style.boxShadow = `0 0 ${10+(temp/3)}px #f00 inset`;
+
+// Tire temps
+let colors=(v)=>`hsl(${Math.max(0,120-v)},100%,50%)`;
+tireFL.style.background=colors(tire());
+tireFR.style.background=colors(tire());
+tireRL.style.background=colors(tire());
+tireRR.style.background=colors(tire());
+
+// G-force
+let gx = gX*60;
+let gy = gY*60;
+gDot.style.left = 82 + gx + "px";
+gDot.style.top = 82 - gy + "px";
+}
+setInterval(updateSim, 100);
+</script>
+</body>
+</html>

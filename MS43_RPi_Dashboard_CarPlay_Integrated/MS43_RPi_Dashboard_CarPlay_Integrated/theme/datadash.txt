@@ -1,0 +1,131 @@
+<!-- Updated EuroDash HTML with added features and screen-sized layout -->
+<html>
+<head>
+<style>
+body { margin:0; padding:0; background:#000; font-family:"Orbitron", sans-serif; color:#FFD700; overflow:hidden; }
+#screenWrapper { width:1280px; height:720px; margin:auto; background:#000; position:relative; overflow:hidden; }
+#dashboard { display:flex; flex-direction:column; align-items:center; padding:20px; }
+.top-row, .middle-row, .bottom-row { display:flex; justify-content:center; flex-wrap:wrap; margin:10px 0; }
+.metric-box { background:#111; border:2px solid #FFD700; border-radius:12px; margin:10px; padding:15px; text-align:center; box-shadow:0 0 10px #FFD700; min-width:140px; }
+.metric-label { font-size:14px; opacity:0.8; margin-bottom:5px; }
+.metric-value { font-size:28px; font-weight:bold; color:#FFD700; }
+.bar-container { width:100%; height:12px; background:#222; border-radius:6px; margin-top:5px; overflow:hidden; border:1px solid #FFD700; }
+.bar-fill { height:100%; width:0%; background:#FFD700; transition:width 0.1s; }
+#shiftBar { position:absolute; top:5px; left:50%; transform:translateX(-50%); width:95%; height:20px; background:linear-gradient(to right, #0f0, #ff0, #ff8000, #f00); opacity:0.15; border-radius:10px; transition:opacity 0.1s; }
+.rev-glow { animation:revGlow 0.3s infinite; }
+@keyframes revGlow { 0%{text-shadow:0 0 10px #ff0;} 50%{text-shadow:0 0 30px #ff0;} 100%{text-shadow:0 0 10px #ff0;} }
+</style>
+</head>
+<body>
+<div id="screenWrapper">
+<div id="shiftBar"></div>
+<div id="dashboard">
+
+<div class="top-row">
+<div class="metric-box" id="RPM"><div class="metric-label">RPM</div><div class="metric-value" id="rpmVal">0 <!-- Side Buttons Left -->
+<div id="leftButtons" style="position:absolute; left:10px; top:80px; display:flex; flex-direction:column; gap:12px;">
+<div class="metric-box" style="min-width:90px;">ABS</div>
+<div class="metric-box" style="min-width:90px;">TCS</div>
+<div class="metric-box" style="min-width:90px;">Check</div>
+<div class="metric-box" style="min-width:90px;">Oil</div>
+</div>
+
+<!-- Side Buttons Right -->
+<div id="rightButtons" style="position:absolute; right:10px; top:80px; display:flex; flex-direction:column; gap:12px;">
+<div class="metric-box" style="min-width:90px;">Map 1</div>
+<div class="metric-box" style="min-width:90px;">Map 2</div>
+<div class="metric-box" style="min-width:90px;">Launch</div>
+<div class="metric-box" style="min-width:90px;">Pit</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="middle-row">
+<div class="metric-box" id="Speed"><div class="metric-label">Speed</div><div class="metric-value" id="speedVal">0 MPH</div></div>
+<div class="metric-box" id="Boost"><div class="metric-label">Boost</div><div class="metric-value" id="boostVal">0 PSI</div><div class="bar-container"><div class="bar-fill" id="boostBar"></div></div></div>
+<div class="metric-box" id="Throttle"><div class="metric-label">Throttle</div><div class="metric-value" id="throttleVal">0%</div><div class="bar-container"><div class="bar-fill" id="throttleBar"></div></div></div>
+<div class="metric-box" id="Coolant"><div class="metric-label">Coolant Temp</div><div class="metric-value" id="coolantVal">0°C</div></div>
+<div class="metric-box" id="OilTemp"><div class="metric-label">Oil Temp</div><div class="metric-value" id="oilTempVal">0°C</div></div>
+<div class="metric-box" id="IAT"><div class="metric-label">IAT</div><div class="metric-value" id="iatVal">0°C</div></div>
+<div class="metric-box" id="Gear"><div class="metric-label">Gear</div><div class="metric-value" id="gearVal">N</div></div>
+</div>
+
+<div class="bottom-row">
+<div class="metric-box" id="MAF"><div class="metric-label">MAF</div><div class="metric-value" id="mafVal">0 g/s</div></div>
+<div class="metric-box" id="AFR"><div class="metric-label">AFR</div><div class="metric-value" id="afrVal">14.7</div></div>
+<div class="metric-box" id="Load"><div class="metric-label">Engine Load</div><div class="metric-value" id="loadVal">0%</div></div>
+<div class="metric-box" id="Timing"><div class="metric-label">Ignition Timing</div><div class="metric-value" id="timingVal">0°</div></div>
+<div class="metric-box" id="Voltage"><div class="metric-label">Voltage</div><div class="metric-value" id="voltageVal">12V</div></div>
+<div class="metric-box" id="STFT"><div class="metric-label">STFT</div><div class="metric-value" id="stftVal">0%</div></div>
+<div class="metric-box" id="LTFT"><div class="metric-label">LTFT</div><div class="metric-value" id="ltftVal">0%</div></div>
+<div class="metric-box" id="OilPressure"><div class="metric-label">Oil Pressure</div><div class="metric-value" id="oilPressureVal">0 PSI</div><div class="bar-container"><div class="bar-fill" id="oilPressureBar"></div></div></div>
+</div>
+
+</div>
+</div>
+
+<script>
+function getRandom(min,max){return Math.random()*(max-min)+min;}
+function updateMetrics(){
+const rpm=Math.floor(getRandom(0,7000));
+const speed=Math.floor(getRandom(0,160));
+const boost=parseFloat(getRandom(-10,20).toFixed(1));
+const throttle=parseInt(getRandom(0,100));
+const coolant=parseInt(getRandom(80,100));
+const oilTemp=parseInt(getRandom(85,120));
+const iat=parseInt(getRandom(20,45));
+const maf=parseFloat(getRandom(0,180).toFixed(1));
+const afr=parseFloat(getRandom(12,15).toFixed(1));
+const load=parseInt(getRandom(0,95));
+const timing=parseInt(getRandom(-5,30));
+const voltage=parseFloat(getRandom(11.5,14.5).toFixed(1));
+const stft=parseFloat(getRandom(-5,5).toFixed(1));
+const ltft=parseFloat(getRandom(-5,5).toFixed(1));
+const oilPressure=parseFloat(getRandom(20,65).toFixed(1));
+
+rpmVal.innerText=rpm;
+speedVal.innerText=speed+" MPH";
+boostVal.innerText=boost+" PSI";
+throttleVal.innerText=throttle+"%";
+coolantVal.innerText=coolant+"°C";
+oilTempVal.innerText=oilTemp+"°C";
+iatVal.innerText=iat+"°C";
+mafVal.innerText=maf+" g/s";
+afrVal.innerText=afr;
+loadVal.innerText=load+"%";
+timingVal.innerText=timing+"°";
+voltageVal.innerText=voltage+"V";
+stftVal.innerText=stft+"%";
+ltftVal.innerText=ltft+"%";
+oilPressureVal.innerText=oilPressure+" PSI";
+
+boostBar.style.width=Math.min(Math.max((boost+10)/30*100,0),100)+"%";
+throttleBar.style.width=throttle+"%";
+oilPressureBar.style.width=((oilPressure-10)/70*100)+"%";
+
+const gear=detectGear(rpm,speed); gearVal.innerText=gear;
+
+shiftBar.style.opacity=Math.min(rpm/6800,1);
+if(rpm>6500) Gear.classList.add("rev-glow"); else Gear.classList.remove("rev-glow");
+}
+
+const gearRatios={1:3.82,2:2.2,3:1.4,4:1,5:0.8};
+const finalDrive=3.15;
+const tireCirc=2.02;
+function detectGear(rpm,speed){
+if(speed<2||rpm<900) return "N";
+let best="N",bestDiff=Infinity;
+for(const g in gearRatios){
+const expected=(rpm/(gearRatios[g]*finalDrive))*tireCirc*0.03728;
+const diff=Math.abs(expected-speed);
+if(diff<bestDiff){bestDiff=diff;best=g;}
+}
+return best;
+}
+
+setInterval(updateMetrics,100);
+</script>
+</body>
+</html>

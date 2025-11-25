@@ -1,0 +1,617 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EuroDash 2025 - IC10</title>
+<style>
+  /* --- Base / Carbon Background --- */
+  :root{
+    --gold:#FFD700;
+    --bg:#000;
+    --panel:#0a0a0a;
+    --accent:#ffd700;
+    --muted:#999;
+    --glass: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;background:#050505;font-family:Inter,Orbitron,Segoe UI,Roboto, sans-serif;color:var(--gold);-webkit-font-smoothing:antialiased;}
+  /* Carbon pattern (CSS) */
+  body::before{
+    content:"";position:fixed;inset:0;background:
+    linear-gradient(135deg, rgba(255,255,255,0.02) 0 1px, transparent 1px),
+    linear-gradient(45deg, rgba(255,255,255,0.015) 0 1px, transparent 1px);
+    background-size:8px 8px,8px 8px;opacity:0.08;pointer-events:none;
+  }
+
+  /* IC10 screen wrapper (square with thick border) */
+  .ic10-wrap{
+    width:1200px;height:800px;margin:28px auto;border-radius:14px;
+    border:8px solid rgba(255,215,0,0.12);box-shadow:0 20px 60px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,215,0,0.02);
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.15));
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;padding:18px;
+  }
+
+  /* Euro Drive watermark */
+  .watermark{
+    position:absolute;right:18px;bottom:14px;font-size:26px;opacity:0.06;
+    transform:rotate(-12deg);font-weight:700;letter-spacing:6px;color:var(--gold);
+    pointer-events:none;
+  }
+
+  /* Top bar: time / mode / toggles */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;}
+  .left-top{display:flex;gap:12px;align-items:center;}
+  .clock{font-size:14px;color:var(--muted);padding:6px 10px;background:var(--glass);border-radius:6px;}
+  .mode-toggle{display:flex;gap:8px;align-items:center;}
+  .toggle-btn{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,215,0,0.08);background:#0b0b0b;color:var(--gold);cursor:pointer}
+  .toggle-btn.active{background:var(--gold);color:#000;box-shadow:0 0 12px rgba(255,215,0,0.25)}
+
+  /* Main content area layout */
+  .main{display:flex;flex:1;gap:18px;padding:10px;}
+  /* Left column: big RPM arc + shift lights + drive selector */
+  .left-col{width:610px;background:linear-gradient(180deg,#060606, #070707);border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;position:relative;border:1px solid rgba(255,215,0,0.06)}
+  
+  /* RPM arc container */
+  .rpm-container{width:520px;height:280px;position:relative;display:flex;align-items:center;justify-content:center}
+  /* semicircle arc */
+  .rpm-arc{
+    width:520px;height:260px;border-radius:260px 260px 0 0;overflow:hidden;transform:translateY(6%);
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.05));
+    position:relative;border-bottom:1px solid rgba(255,215,0,0.03);
+  }
+  .rpm-fill{
+    position:absolute;left:0;bottom:0;width:100%;height:0%;
+    background: conic-gradient(from 180deg, rgba(255,120,0,0.95), rgba(255,200,0,0.95));
+    transform-origin:center bottom;transition:height 0.08s linear;
+    filter:drop-shadow(0 6px 18px rgba(255,160,0,0.06));
+  }
+  .rpm-mask{position:absolute;left:0;bottom:0;width:100%;height:50%;background:linear-gradient(180deg,transparent,#000);pointer-events:none}
+  .rpm-center{
+    position:absolute;bottom:8px;text-align:center;color:var(--gold);
+  }
+  .rpm-value{font-size:36px;font-weight:800;letter-spacing:2px}
+  .rpm-label{font-size:12px;color:var(--muted);margin-top:6px}
+
+  /* Shift lights (series of vertical bars above arc) */
+  .shift-lights{position:absolute;top:8px;display:flex;gap:6px;z-index:8}
+  .shift-light{width:18px;height:54px;background:rgba(255,255,255,0.06);border-radius:4px;box-shadow:inset 0 -6px 20px rgba(0,0,0,0.4);}
+  .shift-light.on{background:linear-gradient(180deg,#fff 0,#ff8a00 100%);box-shadow:0 6px 18px rgba(255,140,10,0.5);transform:translateY(-6px);transition:all 0.06s ease}
+
+  /* Drive selector tiles */
+  .drive-tiles{display:flex;gap:10px;margin-top:12px}
+  .tile{padding:12px 18px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,215,0,0.04);cursor:pointer;min-width:110px;text-align:center}
+  .tile .name{font-weight:700}
+  .tile .sub{font-size:12px;color:var(--muted)}
+  .tile.active{background:var(--gold);color:#000;box-shadow:0 8px 30px rgba(255,215,0,0.08)}
+
+  /* Right column: metrics grid + graphs */
+  .right-col{flex:1;background: linear-gradient(180deg,#050505,#070707);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:12px;border:1px solid rgba(255,215,0,0.04);min-width:560px}
+  .metrics-grid{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+  .metric-box{flex:1 0 140px;background:#0b0b0b;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);text-align:center}
+  .metric-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .metric-value{font-size:20px;font-weight:700}
+  .metric-slant{font-size:11px;color:var(--muted);margin-top:6px}
+
+  /* Horizontal bar for boost / throttle / oil pressure etc. */
+  .hbar{height:10px;background:rgba(255,255,255,0.03);border-radius:6px;overflow:hidden;margin-top:8px}
+  .hbar > .fill{height:100%;width:0%;background:linear-gradient(90deg,#ffd700,#ff8a00);transition:width 0.08s linear}
+
+  /* Small bar graphs (gas, car temp) */
+  .small-graphs{display:flex;gap:12px;align-items:flex-end;height:120px;padding:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:8px}
+  .graph-col{flex:1;background:transparent;padding:6px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+  .graph-bar{width:48px;border-radius:6px;background:linear-gradient(180deg,#222,#111);height:6px;display:flex;align-items:flex-end;overflow:hidden;box-shadow:inset 0 -8px 18px rgba(0,0,0,0.6)}
+  .graph-fill{width:100%;height:0%;background:linear-gradient(180deg,#ff8a00,#ffd700);transition:height 0.12s linear}
+
+  /* Log controls */
+  .log-controls{display:flex;gap:12px;align-items:center}
+  .record-btn{padding:12px 14px;border-radius:8px;background:#2a2a2a;border:1px solid rgba(255,0,0,0.12);color:#ffdddd;cursor:pointer}
+  .record-btn.rec{background:#ff3b3b;color:#fff;box-shadow:0 6px 18px rgba(255,59,59,0.18)}
+  .download-link{color:var(--gold);text-decoration:underline;cursor:pointer;font-size:13px}
+
+  /* Log list */
+  .log-list{max-height:120px;overflow:auto;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px;font-size:12px;color:var(--muted);}
+
+  /* Night / Track mode styles */
+  .track-mode .ic10-wrap{border-color:rgba(255,0,0,0.12)}
+  .track-mode .tile.active{background:#ff6b00;color:#000}
+  .night-mode .metric-value{color:#fff}
+  .Drift-mode .metric-value{color:#ff1a1a}
+  /* small responsive */
+  @media (max-width:1250px){
+    .ic10-wrap{transform:scale(0.95)}
+  }
+</style>
+</head>
+<body>
+<div class="ic10-wrap" id="icWrap">
+  <div class="watermark">EURO DRIVE</div>
+
+  <div class="topbar">
+    <div class="left-top">
+      <div class="clock" id="clock">Mon 00:00:00</div>
+      <div class="toggle-btn" id="nightToggle">Night Mode</div>
+      <div class="toggle-btn" id="trackToggle">Track Mode</div>
+	   <div class="toggle-btn" id="trackToggle">Drift Mode</div>
+    </div>
+    <div class="mode-toggle">
+      <div style="font-size:13px;color:var(--muted);margin-right:8px">Boost / Antilag</div>
+      <button class="toggle-btn" id="lowBoost">LOW BOOST</button>
+	  <button class="toggle-btn" id="highBoost">Medium Boost</button>
+      <button class="toggle-btn" id="highBoost">HIGH BOOST</button>
+      <button class="toggle-btn" id="antilagBtn">ANTILAG</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT: RPM and Drive tiles -->
+    <div class="left-col">
+      <div class="rpm-container">
+        <div class="shift-lights" id="shiftLights" style="left:calc(50% - 6*12px)">
+          <!-- 8 shift lights -->
+          <div class="shift-light" data-idx="1"></div>
+          <div class="shift-light" data-idx="2"></div>
+          <div class="shift-light" data-idx="3"></div>
+          <div class="shift-light" data-idx="4"></div>
+          <div class="shift-light" data-idx="5"></div>
+          <div class="shift-light" data-idx="6"></div>
+          <div class="shift-light" data-idx="7"></div>
+          <div class="shift-light" data-idx="8"></div>
+        </div>
+
+        <div class="rpm-arc" id="rpmArc">
+          <div class="rpm-fill" id="rpmFill"></div>
+          <div class="rpm-mask"></div>
+          <div class="rpm-center">
+            <div class="rpm-value" id="rpmVal">0</div>
+            <div class="rpm-label">RPM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="drive-tiles" id="driveTiles">
+        <div class="tile active" data-mode="comfort"><div class="name">Comfort</div><div class="sub">Smooth</div></div>
+        <div class="tile" data-mode="sport"><div class="name">Sport</div><div class="sub">Sharpened</div></div>
+        <div class="tile" data-mode="sportp"><div class="name">Sport+</div><div class="sub">Aggressive</div></div>
+      </div>
+
+      <div style="margin-top:10px;width:100%;display:flex;justify-content:space-between;align-items:center">
+        <div class="log-controls">
+          <button class="record-btn" id="startLog">Start Log</button>
+          <button class="record-btn" id="endLog" disabled>End Log</button>
+        </div>
+        <div style="text-align:right;color:var(--muted);font-size:13px">
+          <div>Session</div>
+          <div id="sessionState">Idle</div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;width:100%">
+        <div class="log-list" id="logList">No logs yet.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: metrics -->
+    <div class="right-col">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:16px;font-weight:700">Telemetry</div>
+        <div style="font-size:13px;color:var(--muted)">IC10 • 2025 UI</div>
+      </div>
+
+      <div class="metrics-grid" id="metricsGrid">
+        <!-- keep these aligned with earlier UX -->
+        <div class="metric-box"><div class="metric-label">Speed</div><div class="metric-value" id="speedVal">0 MPH</div><div class="metric-slant">km/h calc: <span id="kph">0</span></div></div>
+
+        <div class="metric-box"><div class="metric-label">Boost</div><div class="metric-value" id="boostVal">0 PSI</div>
+          <div class="hbar"><div class="fill" id="boostBar"></div></div>
+        </div>
+
+        <div class="metric-box"><div class="metric-label">Throttle</div><div class="metric-value" id="throttleVal">0%</div>
+          <div class="hbar"><div class="fill" id="throttleBar"></div></div>
+        </div>
+
+        <div class="metric-box"><div class="metric-label">Coolant Temp</div><div class="metric-value" id="coolantVal">0°C</div></div>
+
+        <div class="metric-box"><div class="metric-label">Oil Temp</div><div class="metric-value" id="oilTempVal">0°C</div></div>
+
+        <div class="metric-box"><div class="metric-label">IAT</div><div class="metric-value" id="iatVal">0°C</div></div>
+
+        <div class="metric-box"><div class="metric-label">Gear</div><div class="metric-value" id="gearVal">N</div></div>
+        <div class="metric-box"><div class="metric-label">AFR</div><div class="metric-value" id="afrVal">14.5</div></div>
+        <div class="metric-box"><div class="metric-label">MAF</div><div class="metric-value" id="mafVal">3g/s</div></div>
+        <div class="metric-box"><div class="metric-label">Engine Load</div><div class="metric-value" id="loadVal">0%</div></div>
+        <div class="metric-box"><div class="metric-label">Ignition Timing</div><div class="metric-value" id="timingVal">-2°</div></div>
+        <div class="metric-box"><div class="metric-label">Voltage</div><div class="metric-value" id="voltageVal">12V</div></div>
+
+        <div class="metric-box"><div class="metric-label">STFT</div><div class="metric-value" id="stftVal">0%</div></div>
+        <div class="metric-box"><div class="metric-label">LTFT</div><div class="metric-value" id="ltftVal">0%</div></div>
+        <div class="metric-box"><div class="metric-label">Oil Pressure</div><div class="metric-value" id="oilPressureVal">65 PSI</div>
+          <div class="hbar"><div class="fill" id="oilPressureBar"></div></div>
+        </div>
+
+        <div class="metric-box"><div class="metric-label">Ethanol % (E85)</div><div class="metric-value" id="e85Val">85%</div></div>
+      </div>
+
+      <!-- small graphs area -->
+      <div style="margin-top:6px;font-size:13px;color:var(--muted)">Graphs</div>
+      <div class="small-graphs" id="smallGraphs">
+        <div class="graph-col">
+          <div style="font-size:13px;margin-bottom:8px;color:var(--muted)">Fuel Level</div>
+          <div class="graph-bar" style="height:180px;">
+            <div class="graph-fill" id="fuelFill" style="height:30%"></div>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--muted)"><span id="fuelPct">60%</span></div>
+        </div>
+
+        <div class="graph-col">
+          <div style="font-size:13px;margin-bottom:8px;color:var(--muted)">Car Temp</div>
+          <div class="graph-bar" style="height:180px;">
+            <div class="graph-fill" id="carTempFill" style="height:40%"></div>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--muted)"><span id="carTempPct">40%</span></div>
+        </div>
+
+        <div class="graph-col">
+          <div style="font-size:13px;margin-bottom:8px;color:var(--muted)">Oil Pressure</div>
+          <div class="graph-bar" style="height:180px;">
+            <div class="graph-fill" id="opFill" style="height:30%"></div>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--muted)"><span id="opPct">30%</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+        <div style="display:flex;gap:12px;align-items:center">
+          <button class="record-btn" id="recordLeft">● Record</button>
+          <button class="record-btn" id="recordRight">End ●</button>
+          <a id="downloadCsv" class="download-link" style="display:none">Download CSV</a>
+        </div>
+        <div style="text-align:right;color:var(--muted);font-size:13px">
+          <div>Mode: <span id="activeDrive">Comfort</span></div>
+          <div>Boost Mode: <span id="activeBoost">LOW</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* -------------------------
+   Simulation + UI binding
+   ------------------------- */
+const rpmVal = document.getElementById('rpmVal');
+const rpmFill = document.getElementById('rpmFill');
+const shiftLights = Array.from(document.querySelectorAll('.shift-light'));
+const speedVal = document.getElementById('speedVal');
+const kph = document.getElementById('kph');
+const boostVal = document.getElementById('boostVal');
+const boostBar = document.getElementById('boostBar');
+const throttleVal = document.getElementById('throttleVal');
+const throttleBar = document.getElementById('throttleBar');
+const coolantVal = document.getElementById('coolantVal');
+const oilTempVal = document.getElementById('oilTempVal');
+const iatVal = document.getElementById('iatVal');
+const mafVal = document.getElementById('mafVal');
+const afrVal = document.getElementById('afrVal');
+const loadVal = document.getElementById('loadVal');
+const timingVal = document.getElementById('timingVal');
+const voltageVal = document.getElementById('voltageVal');
+const stftVal = document.getElementById('stftVal');
+const ltftVal = document.getElementById('ltftVal');
+const oilPressureVal = document.getElementById('oilPressureVal');
+const oilPressureBar = document.getElementById('oilPressureBar');
+const e85Val = document.getElementById('e85Val');
+const gearVal = document.getElementById('gearVal');
+
+const fuelFill = document.getElementById('fuelFill');
+const fuelPct = document.getElementById('fuelPct');
+const carTempFill = document.getElementById('carTempFill');
+const carTempPct = document.getElementById('carTempPct');
+const opFill = document.getElementById('opFill');
+const opPct = document.getElementById('opPct');
+
+const rpmArc = document.getElementById('rpmArc');
+const rpmFillEl = document.getElementById('rpmFill');
+
+const driveTiles = document.querySelectorAll('.tile');
+const activeDriveLabel = document.getElementById('activeDrive');
+
+const lowBoostBtn = document.getElementById('lowBoost');
+const highBoostBtn = document.getElementById('highBoost');
+const antilagBtn = document.getElementById('antilagBtn');
+const activeBoostLabel = document.getElementById('activeBoost');
+
+const nightToggle = document.getElementById('nightToggle');
+const trackToggle = document.getElementById('trackToggle');
+const icWrap = document.getElementById('icWrap');
+
+const startLog = document.getElementById('startLog');
+const endLog = document.getElementById('endLog');
+const logList = document.getElementById('logList');
+const recordLeft = document.getElementById('recordLeft');
+const recordRight = document.getElementById('recordRight');
+const downloadCsv = document.getElementById('downloadCsv');
+const sessionState = document.getElementById('sessionState');
+
+let mode = 'comfort'; // comfort | sport | sportp
+let boostMode = 'low'; // low | high
+let antilagActive = false;
+
+/* Logging */
+let logging=false;
+let currentLog=[]; // accumulate arrays of objects
+let sessions=[];
+
+/* Clock */
+function updateClock(){
+  const d = new Date();
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const day = dayNames[d.getDay()];
+  const dateStr = `${day} ${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  document.getElementById('clock').innerText = dateStr;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+/* Drive tiles interaction */
+driveTiles.forEach(t => {
+  t.addEventListener('click', () => {
+    driveTiles.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    mode = t.getAttribute('data-mode');
+    activeDriveLabel.innerText = t.querySelector('.name').innerText;
+  });
+});
+
+/* Boost & antilag toggles */
+lowBoostBtn.addEventListener('click', () => {
+  boostMode = 'low'; lowBoostBtn.classList.add('active'); highBoostBtn.classList.remove('active');
+  activeBoostLabel.innerText='LOW';
+});
+highBoostBtn.addEventListener('click', () => {
+  boostMode = 'high'; highBoostBtn.classList.add('active'); lowBoostBtn.classList.remove('active');
+  activeBoostLabel.innerText='HIGH';
+});
+antilagBtn.addEventListener('click', () => {
+  antilagActive = !antilagActive;
+  antilagBtn.classList.toggle('active');
+});
+
+/* Night / Track toggles (visual only) */
+nightToggle.addEventListener('click', ()=> {
+  document.body.classList.toggle('night-mode');
+  nightToggle.classList.toggle('active');
+});
+trackToggle.addEventListener('click', ()=> {
+  document.body.classList.toggle('track-mode');
+  trackToggle.classList.toggle('active');
+  icWrap.classList.toggle('track-mode');
+});
+
+/* Logging controls */
+function appendLogRow(obj){
+  currentLog.push(obj);
+  updateLogList();
+}
+function updateLogList(){
+  if(currentLog.length===0) { logList.innerText = "No logs yet."; return; }
+  logList.innerHTML = currentLog.slice(-12).map((r,i)=> {
+    return `<div style="padding:6px;border-bottom:1px dashed rgba(255,255,255,0.02);font-size:12px">
+      ${r.t} | RPM:${r.rpm} | SPD:${r.speed} | Boost:${r.boost} | TH:${r.throttle}%</div>`;
+  }).join('');
+}
+startLog.addEventListener('click', ()=>{
+  logging = true; startLog.disabled=true; endLog.disabled=false;
+  startLog.classList.add('rec'); sessionState.innerText = "Logging";
+  currentLog=[];
+  downloadCsv.style.display='none';
+});
+endLog.addEventListener('click', ()=>{
+  logging=false; startLog.disabled=false; endLog.disabled=true;
+  startLog.classList.remove('rec'); sessionState.innerText = "Idle";
+  // push session and enable download
+  if(currentLog.length>0){
+    sessions.push(currentLog.slice());
+    downloadCsv.style.display='inline';
+    downloadCsv.onclick = ()=> downloadCSV(currentLog);
+  }
+  updateLogList();
+});
+
+/* Left / Right record buttons (alternate) */
+recordLeft.addEventListener('click', ()=> { startLog.click(); });
+recordRight.addEventListener('click', ()=> { endLog.click(); });
+
+function downloadCSV(data){
+  const header = Object.keys(data[0]).join(',');
+  const rows = data.map(r => Object.values(r).join(',')).join('\n');
+  const csv = header + '\n' + rows;
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  downloadCsv.href = url;
+  downloadCsv.download = `eurodash_log_${Date.now()}.csv`;
+  // trigger download
+  downloadCsv.click();
+  setTimeout(()=> URL.revokeObjectURL(url),2000);
+}
+
+/* Gear detection math (same as earlier concept) */
+const gearRatios = {1:3.82,2:2.2,3:1.4,4:1,5:0.8};
+const finalDrive = 3.15;
+const tireCirc = 2.02;
+function detectGear(rpm,speed){
+  if(speed < 2 || rpm < 900) return 'N';
+  let best='N', bestDiff=Infinity;
+  for(const g in gearRatios){
+    const expected = (rpm/(gearRatios[g]*finalDrive))*tireCirc*0.03728;
+    const diff = Math.abs(expected - speed);
+    if(diff < bestDiff){ bestDiff = diff; best = g; }
+  }
+  return best;
+}
+
+/* Utility random */
+function rand(min,max){ return Math.random()*(max-min)+min; }
+
+/* Simulation parameters tuned by mode */
+function modeParams(mode){
+  if(mode==='comfort'){
+    return { rpmMul:0.6, throttleJit:6, boostMax:8, fuelUse:0.02, tempRamp:0.02 };
+  } else if(mode==='sport'){
+    return { rpmMul:0.85, throttleJit:12, boostMax:14, fuelUse:0.035, tempRamp:0.035 };
+  } else {
+    return { rpmMul:1.0, throttleJit:20, boostMax:22, fuelUse:0.055, tempRamp:0.06 };
+  }
+}
+
+/* State */
+let sim = {
+  rpm: 800, speed:0, boost:-2, throttle:0, coolant:88, oilTemp:90, iat:22,
+  maf:12.3, afr:14.7, load:12, timing:3, voltage:12.6, stft:0, ltft:0, oilPress:28, e85:0,
+  fuel: 62, // %
+  carTempPct: 32,
+};
+
+/* animate / update function (runs at ~10Hz) */
+function updateSim(){
+  const p = modeParams(mode);
+  // throttle responds to mode with a bias + jitter
+  const targetThrottle = Math.max(0, Math.min(100, (p.rpmMul*rand(10,80))+ (mode==='sportp'?15:0)));
+  sim.throttle += (targetThrottle - sim.throttle) * 0.12 + rand(-p.throttleJit,p.throttleJit)*0.02;
+
+  // RPM responds to throttle and speed
+  const rpmTarget = 800 + sim.throttle * (55 * p.rpmMul);
+  sim.rpm += (rpmTarget - sim.rpm) * 0.14 + rand(-80,80);
+
+  // speed roughly proportional to rpm/gear - with some smoothing
+  const approximateSpeed = sim.rpm / 70; // arbitrary mapping for realism
+  sim.speed += (approximateSpeed - sim.speed) * 0.08 + rand(-1,1);
+
+  // Boost: base depends on boost mode + throttle + antilag
+  let boostBase = boostMode === 'high' ? rand(8, p.boostMax) : rand(-6,6);
+  if(antilagActive) boostBase += rand(6,14);
+  // throttle amplifies boost slightly
+  sim.boost += (boostBase - sim.boost) * 0.18 + rand(-0.6,0.6);
+
+  // temps / pressures
+  sim.coolant += (rand(80,100) - sim.coolant) * 0.03 * p.tempRamp;
+  sim.oilTemp += (rand(85,120) - sim.oilTemp) * 0.035 * p.tempRamp;
+  sim.iat += (rand(18,48) - sim.iat) * 0.04;
+  sim.maf = Math.max(0, sim.throttle * rand(0.8,1.6));
+  sim.afr += (rand(12,15) - sim.afr) * 0.08;
+  sim.load = Math.max(0, Math.min(100, sim.throttle*rand(0.7,1.1)));
+  sim.timing += (rand(-3,25) - sim.timing) * 0.06;
+  sim.voltage += (rand(11.5,14.6) - sim.voltage) * 0.02;
+  sim.stft += (rand(-5,5) - sim.stft) * 0.05;
+  sim.ltft += (rand(-5,5) - sim.ltft) * 0.04;
+  sim.oilPress += (rand(22,65) - sim.oilPress) * 0.06;
+
+  // e85 simulated
+  sim.e85 += (rand(45,85) - sim.e85) * 0.015;
+
+  // fuel & car temp graph
+  sim.fuel = Math.max(6, sim.fuel - p.fuelUse * 0.05); // slowly consume
+  sim.carTempPct += (sim.oilTemp - (sim.carTempPct*3)) * 0.001 * p.tempRamp;
+  sim.carTempPct = Math.max(5, Math.min(100, sim.carTempPct));
+
+  // round for display
+  const rpm = Math.round(sim.rpm);
+  const speed = Math.round(sim.speed);
+  const boost = Math.round(sim.boost*10)/10;
+  const throttle = Math.round(sim.throttle);
+  const coolant = Math.round(sim.coolant);
+  const oilTemp = Math.round(sim.oilTemp);
+  const iat = Math.round(sim.iat);
+  const maf = (Math.round(sim.maf*10)/10);
+  const afr = (Math.round(sim.afr*10)/10);
+  const load = Math.round(sim.load);
+  const timing = Math.round(sim.timing);
+  const voltage = (Math.round(sim.voltage*10)/10);
+  const stft = (Math.round(sim.stft*10)/10);
+  const ltft = (Math.round(sim.ltft*10)/10);
+  const oilPress = Math.round(sim.oilPress*10)/10;
+  const e85 = Math.round(sim.e85);
+
+  // update DOM
+  rpmVal.innerText = rpm.toLocaleString();
+  // Fill arc height mapped to rpm (0..7000 -> 0..100%)
+  const rpmPct = Math.max(0, Math.min(100, rpm / 7000 * 100));
+  rpmFillEl.style.height = rpmPct + '%';
+
+  // shift lights: light up progressively between 3500 -> 6800
+  const slStart = 3500, slEnd = 6800;
+  const slRange = slEnd - slStart;
+  const slPct = Math.max(0, Math.min(1, (rpm - slStart)/slRange));
+  const lightsOn = Math.round(slPct * shiftLights.length);
+  shiftLights.forEach((el,i) => {
+    if(i < lightsOn) el.classList.add('on'); else el.classList.remove('on');
+  });
+
+  speedVal.innerText = speed + ' MPH';
+  kph.innerText = Math.round(speed * 1.609).toString();
+  boostVal.innerText = boost + ' PSI';
+  boostBar.style.width = Math.max(0,Math.min(100, (boost + 10) / 40 * 100)) + '%';
+  throttleVal.innerText = throttle + '%';
+  throttleBar.style.width = throttle + '%';
+  coolantVal.innerText = coolant + '°C';
+  oilTempVal.innerText = oilTemp + '°C';
+  iatVal.innerText = iat + '°C';
+  mafVal.innerText = maf + ' g/s';
+  afrVal.innerText = afr;
+  loadVal.innerText = load + '%';
+  timingVal.innerText = timing + '°';
+  voltageVal.innerText = voltage + 'V';
+  stftVal.innerText = stft + '%';
+  ltftVal.innerText = ltft + '%';
+  oilPressureVal.innerText = oilPress + ' PSI';
+  oilPressureBar.style.width = Math.max(0,Math.min(100,(oilPress-10)/70*100)) + '%';
+  e85Val.innerText = e85 + '%';
+  gearVal.innerText = detectGear(rpm,speed);
+
+  // graphs:
+  const fuelH = Math.max(3, sim.fuel);
+  fuelFill.style.height = fuelH + '%';
+  fuelPct.innerText = Math.round(fuelH) + '%';
+
+  const carTempH = Math.max(3, Math.min(100, sim.carTempPct));
+  carTempFill.style.height = carTempH + '%';
+  carTempPct.innerText = Math.round(carTempH) + '%';
+
+  const opH = Math.max(5, (oilPress/80)*100);
+  opFill.style.height = opH + '%';
+  opPct.innerText = Math.round(opH) + '%';
+
+  // append to log if logging
+  if(logging){
+    const t = new Date().toISOString();
+    appendLogRow({t, rpm, speed, boost, throttle, coolant, oilTemp, e85});
+  }
+}
+
+/* run at ~10Hz */
+setInterval(updateSim, 100);
+
+/* initialize UI default states */
+lowBoostBtn.classList.add('active');
+document.getElementById('activeBoost').innerText='LOW';
+
+/* seed some starting values */
+sim.rpm = 900;
+sim.speed = 0;
+sim.boost = -5,;
+sim.throttle = 6;
+sim.coolant = 45;
+sim.oilTemp = 90;
+sim.e85 = 80;
+
+/* start automatic clock update already handles time display */
+
+/* small UX tweaks for button states */
+document.getElementById('lowBoost').click();
+
+/* Ensure page is visible */
+updateSim();
+</script>
+</body>
+</html>

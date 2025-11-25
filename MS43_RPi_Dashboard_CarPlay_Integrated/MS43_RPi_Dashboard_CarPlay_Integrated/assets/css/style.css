@@ -1,0 +1,9 @@
+body {
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Audi Type', sans-serif;
+}
+.dashboard-metrics {
+  margin-top: 20px;
+  font-size: 1.5em;
+}

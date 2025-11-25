@@ -1,0 +1,225 @@
+<!-- EuroDash 2025 Update - Boost Modes, Antilag, Flex Fuel, Modern F80/G80 Style -->
+<html>
+<head>
+<style>
+body { margin:0; padding:0; background:#000; font-family:"Orbitron", sans-serif; color:#FFD700; overflow:hidden; }
+#screenWrapper { width:1280px; height:720px; margin:auto; background:#000; position:relative; overflow:hidden; }
+
+/* Modern G-Series Style */
+#dashboard { display:flex; flex-direction:column; align-items:center; padding:20px; }
+
+.top-row, .middle-row, .bottom-row {
+    display:flex; justify-content:center; flex-wrap:wrap; margin:10px 0;
+}
+
+/* Slimmer F80/G80 style boxes */
+.metric-box {
+    background:#0a0a0a; 
+    border:1px solid #FFD700; 
+    border-radius:10px; 
+    margin:8px; padding:12px; 
+    text-align:center;
+    box-shadow:0 0 6px #FFD70099;
+    min-width:150px;
+}
+
+.metric-label { font-size:12px; opacity:0.7; margin-bottom:4px; }
+.metric-value { font-size:26px; font-weight:bold; color:#FFD700; }
+
+/* Bars */
+.bar-container { 
+    width:100%; height:10px; background:#222; 
+    border-radius:5px; margin-top:5px; overflow:hidden;
+    border:1px solid #FFD70055;
+}
+.bar-fill { height:100%; width:0%; background:#FFD700; transition:width 0.1s; }
+
+/* Shift bar */
+#shiftBar {
+    position:absolute; top:5px; left:50%; transform:translateX(-50%);
+    width:95%; height:20px; 
+    background:linear-gradient(to right, #0f0, #ff0, #ff8000, #f00);
+    opacity:0.15; border-radius:10px; transition:opacity 0.1s;
+}
+
+/* Buttons (G80 Touch Button Style) */
+.button-row {
+    display:flex; justify-content:center; margin-top:10px;
+}
+.control-btn {
+    background:#111; color:#FFD700; border:1px solid #FFD700;
+    padding:10px 18px; margin:0 10px; border-radius:8px;
+    font-size:14px; cursor:pointer; transition:0.2s;
+    box-shadow:0 0 6px #FFD70055;
+}
+.control-btn.active {
+    background:#FFD700; color:#000; box-shadow:0 0 14px #FFD700;
+}
+
+/* Antilag pulse */
+.antilag-active {
+    animation:antilagPulse 0.25s infinite alternate;
+}
+@keyframes antilagPulse {
+    0% { box-shadow:0 0 4px red; }
+    100% { box-shadow:0 0 20px red; }
+}
+
+/* Gear glow */
+.rev-glow { animation:revGlow 0.3s infinite; }
+@keyframes revGlow {
+    0%{text-shadow:0 0 10px #ff0;}
+    50%{text-shadow:0 0 30px #ff0;}
+    100%{text-shadow:0 0 10px #ff0;}
+}
+</style>
+</head>
+<body>
+
+<div id="screenWrapper">
+<div id="shiftBar"></div>
+
+<!-- Control Buttons -->
+<div class="button-row">
+    <button class="control-btn" id="lowBoostBtn">LOW BOOST</button>
+    <button class="control-btn" id="highBoostBtn">HIGH BOOST</button>
+    <button class="control-btn" id="antilagBtn">ANTILAG</button>
+</div>
+
+<div id="dashboard">
+
+<!-- RPM -->
+<div class="top-row">
+    <div class="metric-box" id="RPM">
+        <div class="metric-label">RPM</div>
+        <div class="metric-value" id="rpmVal">0</div>
+    </div>
+</div>
+
+<!-- MAIN METRICS -->
+<div class="middle-row">
+    <div class="metric-box"><div class="metric-label">Speed</div><div class="metric-value" id="speedVal">0 MPH</div></div>
+    <div class="metric-box"><div class="metric-label">Boost</div><div class="metric-value" id="boostVal">0 PSI</div><div class="bar-container"><div class="bar-fill" id="boostBar"></div></div></div>
+    <div class="metric-box"><div class="metric-label">Throttle</div><div class="metric-value" id="throttleVal">0%</div><div class="bar-container"><div class="bar-fill" id="throttleBar"></div></div></div>
+    <div class="metric-box"><div class="metric-label">Coolant</div><div class="metric-value" id="coolantVal">0°C</div></div>
+    <div class="metric-box"><div class="metric-label">Oil Temp</div><div class="metric-value" id="oilTempVal">0°C</div></div>
+    <div class="metric-box"><div class="metric-label">IAT</div><div class="metric-value" id="iatVal">0°C</div></div>
+    <div class="metric-box"><div class="metric-label">Gear</div><div class="metric-value" id="gearVal">N</div></div>
+</div>
+
+<!-- LOWER METRICS + Flex Fuel -->
+<div class="bottom-row">
+    <div class="metric-box"><div class="metric-label">MAF</div><div class="metric-value" id="mafVal">0 g/s</div></div>
+    <div class="metric-box"><div class="metric-label">AFR</div><div class="metric-value" id="afrVal">14.7</div></div>
+    <div class="metric-box"><div class="metric-label">Load</div><div class="metric-value" id="loadVal">0%</div></div>
+    <div class="metric-box"><div class="metric-label">Timing</div><div class="metric-value" id="timingVal">0°</div></div>
+    <div class="metric-box"><div class="metric-label">Voltage</div><div class="metric-value" id="voltageVal">12V</div></div>
+    <div class="metric-box"><div class="metric-label">STFT</div><div class="metric-value" id="stftVal">0%</div></div>
+    <div class="metric-box"><div class="metric-label">LTFT</div><div class="metric-value" id="ltftVal">0%</div></div>
+    <div class="metric-box"><div class="metric-label">Oil Pressure</div><div class="metric-value" id="oilPressureVal">0 PSI</div><div class="bar-container"><div class="bar-fill" id="oilPressureBar"></div></div></div>
+
+    <!-- NEW: E85 SENSOR -->
+    <div class="metric-box">
+        <div class="metric-label">Ethanol %</div>
+        <div class="metric-value" id="e85Val">0%</div>
+    </div>
+</div>
+
+</div>
+</div>
+
+<script>
+/* SIMULATION SETTINGS */
+let boostMode = "low"; // low or high
+let antilagActive = false;
+
+/* BUTTON LOGIC */
+lowBoostBtn.onclick = () => {
+    boostMode = "low";
+    lowBoostBtn.classList.add("active");
+    highBoostBtn.classList.remove("active");
+};
+highBoostBtn.onclick = () => {
+    boostMode = "high";
+    highBoostBtn.classList.add("active");
+    lowBoostBtn.classList.remove("active");
+};
+antilagBtn.onclick = () => {
+    antilagActive = !antilagActive;
+    antilagBtn.classList.toggle("active");
+    antilagBtn.classList.toggle("antilag-active");
+};
+
+/* RANDOM GENERATOR */
+function getRandom(min,max){return Math.random()*(max-min)+min;}
+
+function updateMetrics(){
+    const rpm=Math.floor(getRandom(0,7000));
+    const speed=Math.floor(getRandom(0,160));
+
+    let boost = boostMode === "high" ? getRandom(10,28) : getRandom(-8,14);
+    if (antilagActive) boost += 8;
+
+    const throttle=parseInt(getRandom(0,100));
+    const coolant=parseInt(getRandom(80,100));
+    const oilTemp=parseInt(getRandom(85,120));
+    const iat=parseInt(getRandom(20,45));
+    const maf=parseFloat(getRandom(0,180).toFixed(1));
+    const afr=parseFloat(getRandom(12,15).toFixed(1));
+    const load=parseInt(getRandom(0,95));
+    const timing=parseInt(getRandom(-5,30));
+    const voltage=parseFloat(getRandom(11.5,14.5).toFixed(1));
+    const stft=parseFloat(getRandom(-5,5).toFixed(1));
+    const ltft=parseFloat(getRandom(-5,5).toFixed(1));
+    const oilPressure=parseFloat(getRandom(20,65).toFixed(1));
+    const e85 = parseInt(getRandom(45,85)); // FLEX FUEL %
+
+    rpmVal.innerText=rpm;
+    speedVal.innerText=speed+" MPH";
+    boostVal.innerText=boost.toFixed(1)+" PSI";
+    throttleVal.innerText=throttle+"%";
+    coolantVal.innerText=coolant+"°C";
+    oilTempVal.innerText=oilTemp+"°C";
+    iatVal.innerText=iat+"°C";
+    mafVal.innerText=maf+" g/s";
+    afrVal.innerText=afr;
+    loadVal.innerText=load+"%";
+    timingVal.innerText=timing+"°";
+    voltageVal.innerText=voltage+"V";
+    stftVal.innerText=stft+"%";
+    ltftVal.innerText=ltft+"%";
+    oilPressureVal.innerText=oilPressure+" PSI";
+    e85Val.innerText=e85+"%";
+
+    boostBar.style.width=Math.min(Math.max((boost+10)/40*100,0),100)+"%";
+    throttleBar.style.width=throttle+"%";
+    oilPressureBar.style.width=((oilPressure-10)/70*100)+"%";
+
+    /* Gear detection */
+    const gear = detectGear(rpm,speed);
+    gearVal.innerText=gear;
+
+    shiftBar.style.opacity=Math.min(rpm/6800,1);
+    if(rpm>6500) Gear.classList.add("rev-glow");
+    else Gear.classList.remove("rev-glow");
+}
+
+/* Gear Ratio Logic */
+const gearRatios={1:3.82,2:2.2,3:1.4,4:1,5:0.8};
+const finalDrive=3.15;
+const tireCirc=2.02;
+function detectGear(rpm,speed){
+    if(speed<2||rpm<900) return "N";
+    let best="N",bestDiff=Infinity;
+    for(const g in gearRatios){
+        const expected=(rpm/(gearRatios[g]*finalDrive))*tireCirc*0.03728;
+        const diff=Math.abs(expected-speed);
+        if(diff<bestDiff){bestDiff=diff;best=g;}
+    }
+    return best;
+}
+
+setInterval(updateMetrics,100);
+</script>
+</body>
+</html>
