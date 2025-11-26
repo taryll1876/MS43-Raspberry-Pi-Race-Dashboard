@@ -1,0 +1,259 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EuroDash — M-Theme Simulation</title>
+<style>
+:root{
+  --m-cyan:#00bcd4;
+  --m-mag:#8a2be2;
+  --m-red:#ff3b3b;
+  --bg:#05060a;
+  --panel:#07080b;
+  --glass: rgba(255,255,255,0.02);
+  --muted: rgba(255,255,255,0.65);
+  --accent1: var(--m-cyan);
+  --accent2: var(--m-mag);
+  --accent3: var(--m-red);
+}
+html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,Orbitron,Segoe UI,Roboto,sans-serif;color:var(--m-cyan);-webkit-font-smoothing:antialiased;}
+body::before{
+  content:"";position:fixed;inset:0;background:
+  linear-gradient(135deg, rgba(255,255,255,0.01) 0 1px, transparent 1px),
+  linear-gradient(45deg, rgba(255,255,255,0.008) 0 1px, transparent 1px);
+  background-size:8px 8px,8px 8px;opacity:0.04;pointer-events:none;
+}
+.ic10-wrap{
+  width:1200px;height:800px;margin:20px auto;border-radius:14px;
+  border:8px solid rgba(0,188,212,0.06);box-shadow:0 24px 60px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,188,212,0.02);
+  background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.12));
+  position:relative;overflow:hidden;display:flex;flex-direction:column;padding:16px;
+}
+.watermark{position:absolute;right:18px;bottom:14px;font-size:28px;opacity:0.04;transform:rotate(-12deg);font-weight:700;letter-spacing:6px;color:var(--m-mag);pointer-events:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;}
+.left-top{display:flex;gap:12px;align-items:center;}
+.clock{font-size:14px;color:var(--muted);padding:6px 10px;background:var(--glass);border-radius:6px;}
+.mode-toggle{display:flex;gap:8px;align-items:center;}
+.toggle-btn{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--m-cyan);cursor:pointer}
+.toggle-btn.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#001020;box-shadow:0 8px 28px rgba(138,43,226,0.08)}
+.main{display:flex;flex:1;gap:18px;padding:10px;}
+.left-col{width:620px;background:linear-gradient(180deg,#061016, #07060a);border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;position:relative;border:1px solid rgba(255,255,255,0.03)}
+.rpm-container{width:520px;height:300px;position:relative;display:flex;align-items:center;justify-content:center;}
+.rpm-svg{width:520px;height:300px}
+.rpm-center{position:absolute;bottom:18px;text-align:center;color:var(--m-cyan)}
+.rpm-value{font-size:40px;font-weight:900}
+.rpm-label{font-size:12px;color:var(--muted);margin-top:6px}
+.shift-lights{position:absolute;top:14px;display:flex;gap:6px;z-index:8}
+.shift-light{width:18px;height:54px;background:rgba(255,255,255,0.04);border-radius:4px;box-shadow:inset 0 -6px 20px rgba(0,0,0,0.4);transition:all 0.06s ease;}
+.shift-light.on{background:linear-gradient(180deg,#fff,var(--accent3));box-shadow:0 8px 26px rgba(255,59,59,0.18);transform:translateY(-6px)}
+.drive-tiles{display:flex;gap:10px;margin-top:14px}
+.tile{padding:12px 18px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);cursor:pointer;min-width:110px;text-align:center;color:var(--muted)}
+.tile .name{font-weight:800}
+.tile .sub{font-size:12px;color:var(--muted)}
+.tile.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#001020;box-shadow:0 12px 40px rgba(0,188,212,0.06)}
+.right-col{flex:1;background: linear-gradient(180deg,#02060a,#071014);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:12px;border:1px solid rgba(255,255,255,0.02);min-width:560px}
+.metrics-grid{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.metric-box{flex:1 0 140px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.06));padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);text-align:center}
+.metric-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+.metric-value{font-size:20px;font-weight:800;color:var(--m-cyan)}
+.metric-value.warn{color:var(--m-red)}
+.metric-slant{font-size:11px;color:var(--muted);margin-top:6px}
+.hbar{height:10px;background:rgba(255,255,255,0.03);border-radius:6px;overflow:hidden;margin-top:8px}
+.hbar>.fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent1),var(--accent2),var(--accent3));transition:width 0.08s linear}
+.small-graphs{display:flex;gap:12px;align-items:flex-end;height:120px;padding:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:8px}
+.graph-col{flex:1;background:transparent;padding:6px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.graph-bar{width:48px;border-radius:6px;background:linear-gradient(180deg,#111,#070707);height:6px;display:flex;align-items:flex-end;overflow:hidden;box-shadow:inset 0 -8px 18px rgba(0,0,0,0.6)}
+.graph-fill{width:100%;height:0%;background:linear-gradient(180deg,var(--accent3),var(--accent2));transition:height 0.12s linear}
+.log-controls{display:flex;gap:12px;align-items:center}
+.record-btn{padding:10px 14px;border-radius:8px;background:#111;border:1px solid rgba(255,0,0,0.12);color:var(--accent3);cursor:pointer}
+.record-btn.rec{background:var(--accent3);color:#fff;box-shadow:0 6px 18px rgba(255,59,59,0.12)}
+.download-link{color:var(--m-cyan);text-decoration:underline;cursor:pointer;font-size:13px}
+.log-list{max-height:140px;overflow:auto;padding:8px;background:rgba(255,255,255,0.01);border-radius:8px;font-size:12px;color:var(--muted);}
+.small-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mode-pill{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted);cursor:pointer}
+.mode-pill.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#001020}
+.modules{display:flex;gap:12px;align-items:center;margin-top:6px}
+.gforce{width:140px;height:140px;border-radius:50%;border:2px solid rgba(255,255,255,0.02);position:relative;display:flex;align-items:center;justify-content:center}
+.g-dot{width:10px;height:10px;border-radius:50%;background:var(--accent3);box-shadow:0 6px 18px rgba(255,59,59,0.12);position:absolute;left:65px;top:65px;transition:transform 0.08s}
+.tire-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:200px}
+.tire-box{height:52px;border-radius:8px;background:linear-gradient(90deg,#111,#0a0a0a);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.brake-dot{width:46px;height:46px;border-radius:50%;background:#111;box-shadow:inset 0 -8px 20px rgba(0,0,0,0.6),0 0 0 rgba(0,0,0,0);transition:box-shadow 0.12s}
+.map-popup{position:absolute;right:18px;top:90px;width:420px;height:260px;background:linear-gradient(180deg,rgba(0,0,0,0.6),rgba(0,0,0,0.35));border-radius:10px;padding:8px;display:none;border:1px solid rgba(255,255,255,0.02)}
+.startup{position:absolute;inset:0;background:radial-gradient(circle at 30% 20%, rgba(0,188,212,0.08), transparent 20%),linear-gradient(180deg, rgba(0,0,0,0.9), transparent 40%);display:flex;align-items:center;justify-content:center;z-index:1000;font-size:48px;color:var(--m-cyan);font-weight:900;pointer-events:none;animation:fadeOut 2.4s ease forwards;}
+@keyframes fadeOut{0%{opacity:1}70%{opacity:1}100%{opacity:0;visibility:hidden}}
+@media(max-width:1250px){.ic10-wrap{transform:scale(0.92)}}
+</style>
+</head>
+<body>
+<div class="ic10-wrap" id="icWrap">
+  <div class="startup" id="startup">EURO DRIVE</div>
+  <div class="watermark">EURO DRIVE</div>
+
+  <div class="topbar">
+    <div class="left-top">
+      <div class="clock" id="clock">Mon 00:00:00</div>
+      <div class="toggle-btn" id="nightToggle">Night Mode</div>
+      <div class="toggle-btn" id="trackToggle">Track Mode</div>
+      <div class="toggle-btn" id="driftToggle">Drift Mode</div>
+    </div>
+    <div class="mode-toggle">
+      <div style="font-size:13px;color:var(--muted);margin-right:8px">Boost / Antilag</div>
+      <button class="toggle-btn" id="lowBoost">Baby Boost</button>
+      <button class="toggle-btn" id="highBoost">BIG BOOST</button>
+      <button class="toggle-btn" id="antilagBtn">ANTILAG</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT: RPM, shift lights, drive tiles -->
+    <div class="left-col">
+      <div class="shift-lights" id="shiftLights" style="left:calc(50% - 80px)">
+        <div class="shift-light" data-idx="1"></div>
+        <div class="shift-light" data-idx="2"></div>
+        <div class="shift-light" data-idx="3"></div>
+        <div class="shift-light" data-idx="4"></div>
+        <div class="shift-light" data-idx="5"></div>
+        <div class="shift-light" data-idx="6"></div>
+        <div class="shift-light" data-idx="7"></div>
+        <div class="shift-light" data-idx="8"></div>
+      </div>
+
+      <div class="rpm-container">
+        <svg class="rpm-svg" viewBox="0 0 520 300" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="gM" x1="0%" x2="100%">
+              <stop offset="0%" stop-color="var(--accent1)"/>
+              <stop offset="50%" stop-color="var(--accent2)"/>
+              <stop offset="100%" stop-color="var(--accent3)"/>
+            </linearGradient>
+          </defs>
+          <g id="ticks"></g>
+          <path id="arcBg" d="" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="18" stroke-linecap="round"/>
+          <path id="arc" d="" fill="none" stroke="url(#gM)" stroke-width="18" stroke-linecap="round"/>
+          <g id="needleGroup" style="transform-origin:260px 260px;">
+            <line id="needle" x1="260" y1="260" x2="260" y2="80" stroke="#fff" stroke-width="4" stroke-linecap="round" />
+            <circle cx="260" cy="260" r="10" fill="#fff"/>
+          </g>
+        </svg>
+        <div class="rpm-center">
+          <div class="rpm-value" id="rpmVal">0</div>
+          <div class="rpm-label">RPM</div>
+        </div>
+      </div>
+
+      <div class="drive-tiles" id="driveTiles" style="margin-top:12px">
+        <div class="tile active" data-mode="comfort"><div class="name">Comfort</div><div class="sub">Smooth</div></div>
+        <div class="tile" data-mode="sport"><div class="name">Sport</div><div class="sub">Sharpened</div></div>
+        <div class="tile" data-mode="sportp"><div class="name">Sport+</div><div class="sub">Aggressive</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: metrics, graphs, modules -->
+    <div class="right-col">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:16px;font-weight:700">Telemetry</div>
+        <div style="font-size:13px;color:var(--muted)">IC10 • M-Theme</div>
+      </div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* --- Full JS Simulation logic --- */
+const rpmVal = document.getElementById('rpmVal');
+const arc = document.getElementById('arc');
+const arcBg = document.getElementById('arcBg');
+const ticksGroup = document.getElementById('ticks');
+const needleGroup = document.getElementById('needleGroup');
+const driveTiles = document.querySelectorAll('.tile');
+const activeDriveLabel = document.getElementById('activeDrive');
+const lowBoostBtn = document.getElementById('lowBoost');
+const highBoostBtn = document.getElementById('highBoost');
+const antilagBtn = document.getElementById('antilagBtn');
+const activeBoostLabel = document.getElementById('activeBoost')||{innerText:''};
+const nightToggle = document.getElementById('nightToggle');
+const trackToggle = document.getElementById('trackToggle');
+const driftToggle = document.getElementById('driftToggle');
+const mapPopup = document.getElementById('mapPopup');
+const startup = document.getElementById('startup');
+
+setTimeout(()=> startup.style.display='none', 2400);
+
+const cx=260, cy=260, r=200;
+const startAngle=-180, endAngle=0;
+function polar(cx,cy,r,deg){const a=(deg-90)*Math.PI/180;return {x: cx+r*Math.cos(a),y: cy+r*Math.sin(a)}}
+function describeArc(cx,cy,r,startDeg,endDeg){const s=polar(cx,cy,r,endDeg); const e=polar(cx,cy,r,startDeg); const laf=(endDeg-startDeg)<=180?0:1; return `M ${s.x} ${s.y} A ${r} ${r} 0 ${laf} 0 ${e.x} ${e.y}`;}
+arcBg.setAttribute('d', describeArc(cx,cy,r,startAngle,endAngle));
+arc.setAttribute('d', describeArc(cx,cy,r,startAngle,startAngle));
+
+function drawTicks(){ticksGroup.innerHTML='';for(let v=0;v<=7000;v+=500){const pct=v/7000;const angle=startAngle+pct*(endAngle-startAngle);const outer=polar(cx,cy,r,angle);const inner=polar(cx,cy,r-18,angle);const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',outer.x);l.setAttribute('y1',outer.y);l.setAttribute('x2',inner.x);l.setAttribute('y2',inner.y);l.setAttribute('stroke','rgba(255,255,255,0.05)');l.setAttribute('stroke-width','2');ticksGroup.appendChild(l);}}
+drawTicks();
+
+let sim={rpm:0,rpmTarget:0,gX:0,gY:0,tireFL:32,tireFR:32,tireRL:32,tireRR:32,brakeTemp:60,fuel:100,carTempPct:30,oilPress:60};
+let logData=[];
+function updateMetrics(){rpmVal.innerText=Math.round(sim.rpm);
+  const rpmPct=Math.min(sim.rpm/7000,1);
+  arc.setAttribute('d', describeArc(cx,cy,r,startAngle,startAngle+(endAngle-startAngle)*rpmPct));
+  needleGroup.style.transform=`rotate(${startAngle+180*rpmPct}deg)`;
+  
+  // shift lights
+  document.querySelectorAll('.shift-light').forEach((l,i)=>l.classList.toggle('on',sim.rpm>500*(i+1)));
+
+  // metrics
+  const metricsGrid = document.getElementById('metricsGrid');
+  if(!metricsGrid.dataset.inited){
+    const names=['Tire FL','Tire FR','Tire RL','Tire RR','Brake','Fuel','Car Temp','Oil Press','G-force'];
+    names.forEach(n=>{
+      const div=document.createElement('div');div.className='metric-box';div.innerHTML=`<div class="metric-label">${n}</div><div class="metric-value" id="${n.replace(/\s/g,'')}Val">0</div>`;metricsGrid.appendChild(div);
+    });metricsGrid.dataset.inited=true;
+  }
+  document.getElementById('TireFLVal').innerText=sim.tireFL.toFixed(1);
+  document.getElementById('TireFRVal').innerText=sim.tireFR.toFixed(1);
+  document.getElementById('TireRLVal').innerText=sim.tireRL.toFixed(1);
+  document.getElementById('TireRRVal').innerText=sim.tireRR.toFixed(1);
+  document.getElementById('BrakeVal').innerText=Math.round(sim.brakeTemp);
+  document.getElementById('FuelVal').innerText=Math.round(sim.fuel);
+  document.getElementById('CarTempVal').innerText=Math.round(sim.carTempPct);
+  document.getElementById('OilPressVal').innerText=Math.round(sim.oilPress);
+  document.getElementById('G-forceVal').innerText=(Math.sqrt(sim.gX**2+sim.gY**2)).toFixed(2);
+}
+
+// drive tiles
+driveTiles.forEach(tile=>tile.addEventListener('click',()=>{driveTiles.forEach(t=>t.classList.remove('active'));tile.classList.add('active');}));
+
+// boost toggles
+[lowBoostBtn,highBoostBtn,antilagBtn].forEach(btn=>btn.addEventListener('click',()=>{[lowBoostBtn,highBoostBtn,antilagBtn].forEach(b=>b.classList.remove('rec'));btn.classList.add('rec');}));
+
+// night / track / drift
+[nightToggle,trackToggle,driftToggle].forEach(t=>t.addEventListener('click',()=>t.classList.toggle('active')));
+
+// clock
+setInterval(()=>{const d=new Date();document.getElementById('clock').innerText=d.toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+
+// simulation loop
+setInterval(()=>{
+  // RPM dynamics
+  sim.rpmTarget=Math.random()*7000;
+  sim.rpm+= (sim.rpmTarget-sim.rpm)*0.08;
+
+  // tires
+  sim.tireFL+=Math.random()*0.2-0.1;sim.tireFR+=Math.random()*0.2-0.1;
+  sim.tireRL+=Math.random()*0.2-0.1;sim.tireRR+=Math.random()*0.2-0.1;
+
+  // brake, oil, temp
+  sim.brakeTemp+=Math.random()*0.6-0.3;
+  sim.oilPress+=Math.random()*0.6-0.3;
+  sim.carTempPct+=Math.random()*0.3-0.15;
+  sim.fuel=Math.max(0,sim.fuel-0.01);
+
+  // g-force
+  sim.gX=Math.sin(Date.now()/400)*0.9;
+  sim.gY=Math.cos(Date.now()/500)*0.9;
+
+  updateMetrics();
+},80);
+</script>
+</body>
+</html>

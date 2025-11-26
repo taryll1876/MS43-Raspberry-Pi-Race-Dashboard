@@ -1,0 +1,220 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>EuroDash — Settings</title>
+
+<style>
+:root{
+  --m-cyan:#00bcd4;
+  --m-mag:#8a2be2;
+  --m-red:#ff3b3b;
+  --bg:#05060a;
+  --panel:#07080b;
+  --glass: rgba(255,255,255,0.02);
+  --muted: rgba(255,255,255,0.65);
+  --accent1: var(--m-cyan);
+  --accent2: var(--m-mag);
+  --accent3: var(--m-red);
+}
+
+html,body{
+  background:var(--bg);
+  margin:0;
+  color:var(--m-cyan);
+  font-family:Inter,Orbitron,Segoe UI,Roboto,sans-serif;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.01) 0 1px, transparent 1px),
+    linear-gradient(45deg, rgba(255,255,255,0.008) 0 1px, transparent 1px);
+  background-size:8px 8px;
+  opacity:0.04;
+  pointer-events:none;
+}
+
+.wrap{
+  width:1100px;
+  margin:24px auto;
+  padding:18px;
+  border-radius:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.12));
+  border:8px solid rgba(0,188,212,0.06);
+  box-shadow:0 24px 60px rgba(0,0,0,0.8),
+             inset 0 0 40px rgba(0,188,212,0.02);
+}
+
+.title{
+  font-size:26px;
+  font-weight:800;
+  color:var(--m-cyan);
+}
+
+.section{
+  margin-top:24px;
+  padding:18px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.04);
+}
+
+.section h2{
+  margin:0 0 12px 0;
+  font-size:18px;
+  color:var(--m-cyan);
+}
+
+.label{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+
+.slider{
+  width:100%;
+}
+
+.color-row{
+  display:flex;
+  gap:12px;
+}
+
+.color-box{
+  width:42px;
+  height:42px;
+  border-radius:8px;
+  cursor:pointer;
+  border:2px solid rgba(255,255,255,0.08);
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+
+.toggle-btn{
+  padding:10px 14px;
+  border-radius:8px;
+  background:transparent;
+  border:1px solid rgba(255,255,255,0.04);
+  color:var(--m-cyan);
+  cursor:pointer;
+  margin-right:8px;
+}
+
+.toggle-btn.active{
+  background:linear-gradient(90deg,var(--accent1),var(--accent2));
+  color:#001020;
+  box-shadow:0 8px 28px rgba(138,43,226,0.08);
+}
+
+.save-btn{
+  margin-top:20px;
+  padding:14px 20px;
+  font-size:16px;
+  border-radius:8px;
+  background:linear-gradient(90deg,var(--accent1),var(--accent2));
+  color:#001020;
+  cursor:pointer;
+  border:none;
+}
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="title">EURO DRIVE — SETTINGS</div>
+
+  <!-- BRIGHTNESS -->
+  <div class="section">
+    <h2>Screen Brightness</h2>
+    <div class="label">Adjust Display Brightness</div>
+    <input type="range" min="20" max="120" value="100" class="slider" id="brightnessSlider">
+  </div>
+
+  <!-- UI SCALE -->
+  <div class="section">
+    <h2>UI Scale</h2>
+    <div class="label">Increase / Decrease UI Size</div>
+    <input type="range" min="70" max="130" value="100" class="slider" id="scaleSlider">
+  </div>
+
+  <!-- ACCENT COLORS -->
+  <div class="section">
+    <h2>Theme Accent Colors</h2>
+    <div class="label">Select Primary Accent Color</div>
+    <div class="color-row">
+      <div class="color-box" style="background:#00bcd4" data-color="--accent1:#00bcd4"></div>
+      <div class="color-box" style="background:#8a2be2" data-color="--accent1:#8a2be2"></div>
+      <div class="color-box" style="background:#ff3b3b" data-color="--accent1:#ff3b3b"></div>
+      <div class="color-box" style="background:#39ff14" data-color="--accent1:#39ff14"></div>
+      <div class="color-box" style="background:#ffaa00" data-color="--accent1:#ffaa00"></div>
+    </div>
+  </div>
+
+  <!-- MODES -->
+  <div class="section">
+    <h2>Modes</h2>
+    <button class="toggle-btn" id="nightModeBtn">Night Mode</button>
+    <button class="toggle-btn" id="startupBtn">Startup Animation</button>
+  </div>
+
+  <!-- BOOST -->
+  <div class="section">
+    <h2>Boost Presets</h2>
+    <button class="toggle-btn" id="boostLow">Baby Boost</button>
+    <button class="toggle-btn" id="boostMed">Medium Boost</button>
+    <button class="toggle-btn" id="boostHigh">Big Boost</button>
+    <button class="toggle-btn" id="boostAL">ANTILAG</button>
+  </div>
+
+  <button class="save-btn" id="saveSettings">SAVE SETTINGS</button>
+
+</div>
+
+<script>
+// LOAD SETTINGS
+window.addEventListener("load", () => {
+  let s = JSON.parse(localStorage.getItem("euro_settings") || "{}");
+
+  if(s.brightness) document.getElementById("brightnessSlider").value = s.brightness;
+  if(s.scale) document.getElementById("scaleSlider").value = s.scale;
+
+  document.documentElement.style.filter = `brightness(${s.brightness || 100}%)`;
+  document.documentElement.style.transform = `scale(${(s.scale || 100)/100})`;
+});
+
+// LIVE UPDATE
+document.getElementById("brightnessSlider").addEventListener("input", e=>{
+  document.documentElement.style.filter = `brightness(${e.target.value}%)`;
+});
+
+document.getElementById("scaleSlider").addEventListener("input", e=>{
+  document.documentElement.style.transform = `scale(${e.target.value/100})`;
+});
+
+// COLOR SELECT
+document.querySelectorAll(".color-box").forEach(box=>{
+  box.addEventListener("click", ()=>{
+    let rule = box.dataset.color.split(":");
+    document.documentElement.style.setProperty(rule[0], rule[1]);
+  });
+});
+
+// SAVE SETTINGS
+document.getElementById("saveSettings").addEventListener("click", ()=>{
+  let data = {
+    brightness: document.getElementById("brightnessSlider").value,
+    scale: document.getElementById("scaleSlider").value
+  };
+
+  localStorage.setItem("euro_settings", JSON.stringify(data));
+  alert("Settings Saved!");
+});
+</script>
+
+</body>
+</html>
